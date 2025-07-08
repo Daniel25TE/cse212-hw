@@ -11,7 +11,9 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3) and
     // run until the queue is empty
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found: The original code didn't handle people with Turns ==1 correctly. It skipped re-enqueueing them, which caused them to be removed
+    // before they could be returned. I changed the condition from `Turns > 1` to explicitly allow people with Turns == 1 to be returned once and then excluded from the queue. I added
+    // logic so that people with Turns <= 0 are re-enqueued indefinitely, and people with Turns == 1 are not re-enqueued but still returned properly.
     public void TestTakingTurnsQueue_FiniteRepetition()
     {
         var bob = new Person("Bob", 2);
@@ -43,7 +45,9 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3)
     // After running 5 times, add George with 3 turns.  Run until the queue is empty.
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, George, Sue, Tim, George, Tim, George
-    // Defect(s) Found: 
+    // Defect(s) Found: Same issue as before, people with Turns ==1 were not being returned properly, and the queue
+    // did not respect re-adding mid-game. I fixed the logic to re-add a new person during execution and allow them to participate fully,
+    // while ensuring expired players are removed.
     public void TestTakingTurnsQueue_AddPlayerMidway()
     {
         var bob = new Person("Bob", 2);
@@ -85,7 +89,8 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (Forever), Sue (3)
     // Run 10 times.
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found: The code did not had any logic to handle infinite turns (Turns <=0) correcly; therefore,
+    // infinite players were not re-enqueued so I added the condition: `if (person.Turns <= 0)`. This condition will check for Turns <= 0 and re-enqueue those players without modifying their Turns value.
     public void TestTakingTurnsQueue_ForeverZero()
     {
         var timTurns = 0;
@@ -116,7 +121,8 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Tim (Forever), Sue (3)
     // Run 10 times.
     // Expected Result: Tim, Sue, Tim, Sue, Tim, Sue, Tim, Tim, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found: Same defect as with zero turns. Infinite players were either removed too soon or had their Turns modified incorrectly. I added logic that keeps infinite players in the queue
+    // and prevents their Turns from being decremented or replaced with large finite numbers.
     public void TestTakingTurnsQueue_ForeverNegative()
     {
         var timTurns = -3;
@@ -143,7 +149,7 @@ public class TakingTurnsQueueTests
     [TestMethod]
     // Scenario: Try to get the next person from an empty queue
     // Expected Result: Exception should be thrown with appropriate error message.
-    // Defect(s) Found: 
+    // Defect(s) Found: No defect found. The code correctly throws and InvalidOperationException when the queue is empty. I did not change anything here.
     public void TestTakingTurnsQueue_Empty()
     {
         var players = new TakingTurnsQueue();
